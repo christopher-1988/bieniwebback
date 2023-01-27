@@ -1,0 +1,10 @@
+ UPDATE pacientes SET 
+			idestado= 1 
+			WHERE id='31'
+ UPDATE pacientes_documentos SET
+			idestadoverificacion = 1,
+			estado = 'activo'
+			WHERE id = '31'
+ UPDATE relaciones_familiares SET 
+            idestadoverificacion = 1
+            WHERE id ='5'

@@ -1,13 +1,9 @@
 <?php
-    //CROSS-REEFRENCE PERMITIDOS
-    header('Access-Control-Allow-Origin: *');
-    header("Access-Control-Allow-Headers: Origin, X-Requested-With, Content-Type, Accept");
-    header('Access-Control-Allow-Methods: GET, POST, PUT, DELETE');
-    header('content-type: application/json; charset=utf-8');
 	include_once("../config/config.php");
+	include_once("../model/router.php");
 	include_once("funciones.php");
 	
-    list($METHOD,$PARAMS)=router($_SERVER['REQUEST_METHOD'],$_REQUEST['op']);
+    /*list($METHOD,$PARAMS)=router($_SERVER['REQUEST_METHOD'],$_REQUEST['op']);
 
     if ($METHOD =='GET'){
         switch($PARAMS){ 
@@ -32,7 +28,9 @@
             echo "{failure-POST:true}";
             break;
         } 
-	}
+	}*/
+
+	$router = new Router();
 	
 	function formulario(){
 	    
@@ -42,13 +40,13 @@
 	    return $data;
     }
     
-	function doLoginWithGoogle(){
+    //function doLoginWithGoogle(){
+    $router->post('doLoginWithGoogle',function(){
         global $mysqli;
         $data = formulario();
     
-	    $sentencia = $mysqli->prepare("SELECT u.id AS idusuario,p.id AS idpersonal,CONCAT(p.nombre,' ',p.apellido) AS nombre,p.imagen
-            FROM usuarios u
-            INNER JOIN personal p ON p.idusuario=u.id
+	    $sentencia = $mysqli->prepare("SELECT u.id AS idusuario,CONCAT(u.nombre,' ',u.apellido) AS nombre,u.imagen,u.nivel
+            FROM usuariosback u
             WHERE u.correo = ?");
             
         $sentencia->bind_param("s",$data['correo']);
@@ -66,22 +64,24 @@
     	    
     	        $item = array(
 				    'id'        => $row['idusuario'],
-        	        'idpersonal'=> $row['idpersonal'],
-        	        'nombre'    => $row['nombre']);
+        	        'nombre'    => $row['nombre'],
+        	        'imagen'    => $row['imagen'],
+        	        'r'         => $row['nivel']);
 				
     	        echo notificacion(1,"Bienvenido.!","",$item);
     	    }
     	}
-	}
-	
-    function dologinWithCredencial(){
+    });
+	//}
+	//function dologinWithCredencial(){
+	$router->post('dologinWithCredencial',function(){
+    
         global $mysqli;
         $data   = formulario();
         $clave  = cifrarPassword($data['clave']);
         
-        $sentencia = $mysqli->prepare("SELECT u.id AS idusuario,p.id AS idpersonal,CONCAT(p.nombre,' ',p.apellido) AS nombre,p.imagen
-            FROM usuarios u
-            INNER JOIN personal p ON p.idusuario=u.id
+        $sentencia = $mysqli->prepare("SELECT u.id AS idusuario,CONCAT(u.nombre,' ',u.apellido) AS nombre,u.imagen,u.nivel
+            FROM usuariosback u
             WHERE u.correo = ? AND u.clave = ? ");
         
         $sentencia->bind_param("ss",$data['correo'],$clave);
@@ -99,12 +99,13 @@
     	    
     	        $item = array(
 				    'id'        => $row['idusuario'],
-        	        'idpersonal'=> $row['idpersonal'],
-        	        'nombre'    => $row['nombre']);
+        	        'nombre'    => $row['nombre'],
+        	        'imagen'    => $row['imagen'],
+        	        'r'         => $row['nivel']);
 				
     	        echo notificacion(1,"Bienvenido.!","",$item);
     	    }
     	}
-    }
-  
+	});
+	//}
 ?>
