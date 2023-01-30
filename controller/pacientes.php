@@ -31,7 +31,7 @@
         
 	    return $data;
     }
-    //-FUNCIONAL----------------------------------------------------------------
+    //-FUNCIONAL-------------------------------------------
     function estados($idestado,$idestadoverificacion,$estado){
         /*
 		ESTADOS PACIENTE   | ESTADOS DOCUMENTO VERIFICACION
@@ -53,7 +53,7 @@
             return array(3,$estado);
         }
     }
-    //-VALIDADCION-DEPENDIENTE--------------------------------------------------
+    //-VALIDADCION-DEPENDIENTE-----------------------------
     $router->get('pacientes',function(){
         global $mysqli;
         $data = params();
