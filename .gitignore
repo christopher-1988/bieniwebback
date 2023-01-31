@@ -1,0 +1,8 @@
+#ignorar archivos todo los archivos de texto
+*.txt
+#ignorar las siguientes carptetas
+/assets
+/config
+/library
+/respaldo
+/banners

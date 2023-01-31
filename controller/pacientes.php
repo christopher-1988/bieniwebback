@@ -1,49 +1,9 @@
 <?php
     include_once("../config/config.php");
+    include_once("../model/router.php");
     include_once("funciones.php");
 	
-    list($METHOD,$PARAMS)=router($_SERVER['REQUEST_METHOD'],$_REQUEST['op']);
-    //debugL($PARAMS);
-    if ($METHOD == 'GET'){
-        switch($PARAMS){
-			case 'pacientes':
-				pacientes();
-				break;
-			case 'pacienteId':
-				pacienteId();
-				break;
-            default:
-                echo "{failure-GET:true}";
-                break;
-        }
-    }elseif ($METHOD =='POST') {
-        switch($PARAMS){
-    	    case "paciente" :
-    			cuentaAprobar();
-    			break;
-    	    default:
-                echo "{failure-POST:true}";
-                break;
-        } 
-	}elseif ($METHOD =='PUT') {
-        switch($PARAMS){ 
-			case "pacienete" :
-    			cuentaAprobar();
-    			break;
-    	    default:
-                echo "{failure-PUT:true}";
-                break;
-        } 
-	}elseif ($METHOD =='DELETE') {
-        switch($PARAMS){ 
-			case "paciente" :
-    			 deleteValidacion();
-    			 break;
-    	    default:
-                echo "{failure-POST:true}";
-                break;
-        } 
-	} 
+    $router = new Router();
     
 	function formulario(){
 		//$data = json_decode(file_get_contents("php://input"), true);
@@ -71,27 +31,99 @@
         
 	    return $data;
     }
-    //-VALIDADCION-DEPENDIENTE-----------------------------------------
-    function pacientes(){
+    //-FUNCIONAL-------------------------------------------
+    function estados($idestado,$idestadoverificacion,$estado){
+        /*
+		ESTADOS PACIENTE   | ESTADOS DOCUMENTO VERIFICACION
+		1-activo           | 1-aprobado         
+		2-inactivo         | 2-no aprobado
+		3-documento enviado| 3-en espera de aprobacion
+		*/
+        $estado = "";
+        if($idestado == 1 && $idestadoverificacion == 1){
+            $estado = "Aprobado";
+            return array(1,$estado); 
+        }
+        if($idestado == 2 && $idestadoverificacion == 2){
+            $estado = "No aprobado";
+            return array(2,$estado);
+        }
+        if($idestado == 3 && $idestadoverificacion == 3){
+            $estado = "Documento enviado";
+            return array(3,$estado);
+        }
+    }
+    
+    function tipoVerificacion($tipoVerificacion,$imagenDocumento,$imagenVerificacion){
+        /*
+		ESTADOS VEREFICACION
+		-verificacion-automatica  
+		-verificacion-manual
+		*/
+        $estado = "";
+        
+        debugL($tipoVerificacion."-".$imagenDocumento."-".$imagenVerificacion,"tipo-verificacion");
+        
+        if($tipoVerificacion == "") {
+            $estado = "Error guardado verificación";
+        }
+    
+        if ($tipoVerificacion == "verificacion-automatica") {
+          if ($imagenDocumento == "" || $imagenVerificacion == "") {
+             
+              $error = $imagenDocumento == ""
+                    ?"documento"
+                    :$imagenVerificacion== ""
+                    ?"verifiacion"
+                    :"ambas";
+                    
+            $estado = "Error en guardado de imagen ".$error;
+          } else {
+              
+            $estado = ucfirst(str_replace('verificacion-','',$tipoVerificacion));
+          }
+        }
+    
+        if ($tipoVerificacion == "verificacion-manual") {
+          if ($imagenDocumento == "" || $imagenVerificacion == "") {
+            
+            $error = $imagenDocumento == ""
+                    ?"documento"
+                    :$imagenVerificacion== ""
+                    ?"verifiacion"
+                    :"ambas";
+                    
+            $estado = "Error en guardado de imagen ".$error;
+          } else {
+            $estado = ucfirst(str_replace('verificacion-','',$tipoVerificacion));
+          }
+        }
+        
+        return $estado;
+    }
+    //-VALIDADCION-DEPENDIENTE-----------------------------
+    $router->get('pacientes',function(){
         global $mysqli;
         $data = params();
 		$response = array();
        
-        $query  = " SELECT p.id,p.idparentesco,tp.nombre AS tipodocumento,pd.documento,p.nombre, p.apellido,p.edad, p.fechanacimiento, p.gruposangre,p.numeroemergencia,p.imagen, p.discapacidad,pd.imagen_documento,IF(u.verificacioncorreo=0,'no','si') AS verificacioncorreo,u.telefono
+        $query  = " SELECT p.idusuario AS idusuario,p.id AS idpaciente,CONCAT(p.nombre,' ',p.apellido) AS nombre,p.edad,IF(p.idparentesco = 0,'Principal',pr.nombre) AS perfil, p.fechanacimiento,tp.nombre AS tipodocumento,pd.documento,u.telefono,
+            p.idestado,pd.idestadoverificacion,pd.tipoverificacion,pd.imagen_documento,pd.imagen_verificacion,pd.estado
             FROM pacientes p
             INNER JOIN usuarios u ON u.id=p.idusuario
             LEFT JOIN pacientes_documentos pd ON pd.idpaciente=p.id
             LEFT JOIN tipos_documento tp ON tp.id=pd.idtipodocumento
-            WHERE p.id='".$data['id']."' AND pd.estado='activo ";
+            LEFT JOIN parentescos pr ON pr.id=p.idparentesco
+            WHERE 1 = 1 ";
 		
-		if(!$result = $mysqliWallet->query($query)){
-    		die($mysqliWallet->error);  
+		if(!$result = $mysqli->query($query)){
+    		die($mysqli->error);  
     	}
     	
     	$recordsTotals = $result->num_rows;
 		$inicio  = $data['page'] * 10 - 10;   
-    	$query  .= " ORDER BY b.fecha DESC LIMIT $inicio, 10 ";
-    	$result  = $mysqliWallet->query($query);
+    	$query  .= " ORDER BY p.id DESC LIMIT $inicio, 10 ";
+    	$result  = $mysqli->query($query);
     	$recordsFiltered = $result->num_rows;
         //debugL($query,"getValidaciones");
 		if($recordsTotals == 0){
@@ -99,40 +131,45 @@
 		}   
 		
 		if($recordsTotals > 0){
-			while($row = $result->fetch_assoc()){        
-		        $resultado[] = array(
-            		'idparentesco'      => $row['idparentesco'],
-    				'nombre'   			=> ucwords($row['nombre']), 
-    				'tipodocumento'     => $row['tipodocumento'], 
-    				'documento'         => $row['documento'], 
-    				'fechanacimiento'   => $row['fechanacimiento'], 
-    				'gruposangre'       => $row['gruposangre'], 
-    				'numeroemergencia'  => $row['numeroemergencia'], 
-    				'imagen'        => $row['imagen'], 
-    				'edad'          => $row['edad'],
-    				'telefono'      => $row['telefono'],
-    				'discapacidad'  => $row['discapacidad'],
-    				'imagendocumento'    => $row['imagen_documento'],
-    				'verificacioncorreo' => $row['verificacioncorreo']);
+			while($row = $result->fetch_assoc()){ 
+			    
+			  list($idestado,$estado) = estados($row['idestado'],$row['idestadoverificacion'],$row['estado']);
+			    
+			    $tipoVerificacion = tipoVerificacion($row["tipoverificacion"],$row["imagen_documento"],$row["imagen_verificacion"]);
+			    
+		        $response[] = array(
+    				'idusuario'     => $row['idusuario'],
+    			    'idpaciente'    => $row['idpaciente'],
+    			    'nombre'        => ucwords($row['nombre']),
+    			    'edad'          => $row['edad'],
+    			    'perfil'        => $row['perfil'], 
+    			    'fechanacimiento'=> $row['fechanacimiento'],
+    			    'tipodocumento' => $row['tipodocumento'],
+    			    'documento'     => $row['documento'],
+    			    'telefono'      => $row['telefono'],
+    				'tipoverificacion'  => $tipoVerificacion,
+    			    'idestado'      => $idestado,
+    			    'estadoRegistro' => $estadoRegistro,
+    			    'estado'        => $estado);
 			}
 			echo response($response,$recordsTotals,$recordsFiltered,0);
-		}        
-    }
+		} 
+    });
 	
-	function pacienteId(){
+	$router->get('pacienteId',function(){
         global $mysqli;
         $data = params();
 		$response = array();
        
-        $query  = " SELECT p.id,p.idparentesco,tp.nombre AS tipodocumento,pd.documento,p.nombre, p.apellido,p.edad, p.fechanacimiento, p.gruposangre,p.numeroemergencia,p.imagen, p.discapacidad,pd.imagen_documento,IF(u.verificacioncorreo=0,'no','si') AS verificacioncorreo,u.telefono
+        $query  = " SELECT p.id,p.idparentesco,tp.nombre AS tipodocumento,pd.documento,p.nombre, p.apellido,p.edad, p.fechanacimiento, p.gruposangre,p.numeroemergencia,p.imagen, p.discapacidad,pd.imagen_documento,IF(u.verificacioncorreo=0,'no','si') AS verificacioncorreo,u.telefono,pd.tipoverificacion
             FROM pacientes p
             INNER JOIN usuarios u ON u.id=p.idusuario
             LEFT JOIN pacientes_documentos pd ON pd.idpaciente=p.id
             LEFT JOIN tipos_documento tp ON tp.id=pd.idtipodocumento
             WHERE p.id='".$data['id']."' AND pd.estado='activo ";
 		
-		if(!$result = $mysqliWallet->query($query)){
-    		die($mysqliWallet->error);  
+		if(!$result = $mysqli->query($query)){
+    		die($mysqli->error);  
     	}
     	
     	$recordsTotals = $result->num_rows;
@@ -155,108 +192,11 @@
     				'edad'          => $row['edad'],
     				'telefono'      => $row['telefono'],
     				'discapacidad'  => $row['discapacidad'],
+    				'tipoverificacion'  => ucfirst(str_replace('verificacion-','',$row["tipoverificacion"])),
     				'imagendocumento'    => $row['imagen_documento'],
     				'verificacioncorreo' => $row['verificacioncorreo']);
 			}
 			echo response($response,$recordsTotals,0,0);
 		}        
-    }
-	
-	function dependienteAprobar(){
-        global $mysqli;		
-        $data   = formulario();
-		/*
-		ESTADOS PACIENTE
-		1-activo
-		2-inactivo
-		3-documento enviado
-		*/
-		$queryP = " UPDATE pacientes SET 
-			idestado= 1 
-			WHERE id='".$data['idpaciente']."'";
-		/*
-		ESTADOS DOCUMENTO VERIFICACION
-		1-aprobado
-		2-no aprobado
-		3-en espera de aprobacion
-		*/
-        $queryD = " UPDATE pacientes_documentos SET
-			idestadoverificacion = 1,
-			estado = 'activo'
-			WHERE id = '".$data['iddocumento']."'";
-        /*
-		ESTADOS DOCUMENTO VERIFICACION
-		1-aprobado
-		2-no aprobado
-		3-en espera de aprobacion
-		*/
-        $queryF = " UPDATE relaciones_familiares SET 
-            idestadoverificacion = 1
-            WHERE id ='".$data['idfamiliar']."'";
-            
-        $resultP = $mysqli->query($queryP);
-		$resultD = $mysqli->query($queryD);
-        $resultF = $mysqli->query($queryF);
-				
-	    debugL($queryP,"dependiente");
-	    debugL($queryD,"dependiente");
-	    debugL($queryF,"dependiente");
-	    
-        if($resultP == true && $resultD == true && $resultF == true){
-            echo notificacion(1,"Dependiente aprobado","");
-            exit;    
-        }else{
-            echo notificacion(2,"Problema al actualizar la validación","");
-            exit;
-        }
-    }
-	
-	function dependienteRechazar(){
-        global $mysqli;		
-        $data   = formulario();
-        /*
-		ESTADOS PACIENTE
-		1-activo
-		2-inactivo
-		3-documento enviado
-		*/
-		$queryP = " UPDATE pacientes SET 
-			idestado= 2 
-			WHERE id='".$data['idpaciente']."'";
-		/*
-		ESTADOS DOCUMENTO VERIFICACION
-		1-aprobado
-		2-no aprobado
-		3-en espera de aprobacion
-		*/
-        $queryD = " UPDATE pacientes_documentos SET
-			idestadoverificacion = 2,
-			estado = 'inactivo'
-			WHERE id = '".$data['iddocumento']."'";
-        /*
-		ESTADOS DOCUMENTO VERIFICACION
-		1-aprobado
-		2-no aprobado
-		3-en espera de aprobacion
-		*/
-        $queryF = " UPDATE relaciones_familiares SET 
-            idestadoverificacion = 2
-            WHERE id ='".$data['idfamiliar']."'";
-            
-        $resultP = $mysqli->query($queryP);
-		$resultD = $mysqli->query($queryD);
-        $resultF = $mysqli->query($queryF);
-				
-	    debugL($queryP,"dependiente");
-	    debugL($queryD,"dependiente");
-	    debugL($queryF,"dependiente");
-	    
-        if($resultP == true && $resultD == true && $resultF == true){
-            echo notificacion(1,"Dependiente aprobado","");
-            exit;    
-        }else{
-            echo notificacion(2,"Problema al actualizar la validación","");
-            exit;
-        }
-    }
+    });
 ?>
