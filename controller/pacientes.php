@@ -53,6 +53,54 @@
             return array(3,$estado);
         }
     }
+    
+    function tipoVerificacion($tipoVerificacion,$imagenDocumento,$imagenVerificacion){
+        /*
+		ESTADOS VEREFICACION
+		-verificacion-automatica  
+		-verificacion-manual
+		*/
+        $estado = "";
+        
+        debugL($tipoVerificacion."-".$imagenDocumento."-".$imagenVerificacion,"tipo-verificacion");
+        
+        if($tipoVerificacion == "") {
+            $estado = "Error guardado verificación";
+        }
+    
+        if ($tipoVerificacion == "verificacion-automatica") {
+          if ($imagenDocumento == "" || $imagenVerificacion == "") {
+             
+              $error = $imagenDocumento == ""
+                    ?"documento"
+                    :$imagenVerificacion== ""
+                    ?"verifiacion"
+                    :"ambas";
+                    
+            $estado = "Error en guardado de imagen ".$error;
+          } else {
+              
+            $estado = ucfirst(str_replace('verificacion-','',$tipoVerificacion));
+          }
+        }
+    
+        if ($tipoVerificacion == "verificacion-manual") {
+          if ($imagenDocumento == "" || $imagenVerificacion == "") {
+            
+            $error = $imagenDocumento == ""
+                    ?"documento"
+                    :$imagenVerificacion== ""
+                    ?"verifiacion"
+                    :"ambas";
+                    
+            $estado = "Error en guardado de imagen ".$error;
+          } else {
+            $estado = ucfirst(str_replace('verificacion-','',$tipoVerificacion));
+          }
+        }
+        
+        return $estado;
+    }
     //-VALIDADCION-DEPENDIENTE-----------------------------
     $router->get('pacientes',function(){
         global $mysqli;
@@ -60,7 +108,7 @@
 		$response = array();
        
         $query  = " SELECT p.idusuario AS idusuario,p.id AS idpaciente,CONCAT(p.nombre,' ',p.apellido) AS nombre,p.edad,IF(p.idparentesco = 0,'Principal',pr.nombre) AS perfil, p.fechanacimiento,tp.nombre AS tipodocumento,pd.documento,u.telefono,
-            p.idestado,pd.idestadoverificacion,pd.tipoverificacion,pd.estado
+            p.idestado,pd.idestadoverificacion,pd.tipoverificacion,pd.imagen_documento,pd.imagen_verificacion,pd.estado
             FROM pacientes p
             INNER JOIN usuarios u ON u.id=p.idusuario
             LEFT JOIN pacientes_documentos pd ON pd.idpaciente=p.id
@@ -85,7 +133,9 @@
 		if($recordsTotals > 0){
 			while($row = $result->fetch_assoc()){ 
 			    
-			    list($idestado,$estado) = estados($row['idestado'],$row['idestadoverificacion'],$row['estado']);
+			  list($idestado,$estado) = estados($row['idestado'],$row['idestadoverificacion'],$row['estado']);
+			    
+			    $tipoVerificacion = tipoVerificacion($row["tipoverificacion"],$row["imagen_documento"],$row["imagen_verificacion"]);
 			    
 		        $response[] = array(
     				'idusuario'     => $row['idusuario'],
@@ -97,8 +147,9 @@
     			    'tipodocumento' => $row['tipodocumento'],
     			    'documento'     => $row['documento'],
     			    'telefono'      => $row['telefono'],
-    				'tipoverificacion'  => ucfirst(str_replace('verificacion-','',$row["tipoverificacion"])),
+    				'tipoverificacion'  => $tipoVerificacion,
     			    'idestado'      => $idestado,
+    			    'estadoRegistro' => $estadoRegistro,
     			    'estado'        => $estado);
 			}
 			echo response($response,$recordsTotals,$recordsFiltered,0);

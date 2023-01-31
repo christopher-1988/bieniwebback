@@ -1,9 +1,0 @@
-call
-call
-call
-call
-doLoginWithGoogle--dologinWithCredencial
-call
-doLoginWithGoogle--doLoginWithGoogle
-call
-doLoginWithGoogle--doLoginWithGoogle
