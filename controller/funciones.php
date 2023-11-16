@@ -1,6 +1,6 @@
 <?php
     include_once("../config/config.php");
-    //-REPONSE----------------------------------------------------- 
+    //-REPONSE
     function notificacion($rsp,$msg,$id,$item=array()){
         return json_encode(array(
                 'rsp'   => $rsp,
@@ -21,7 +21,7 @@
         $PARAM  = isset($REQUEST)?$REQUEST:"";
         return array($METHOD,$PARAM);
     }
-    //-DIRECTORIO--------------------------------------------------
+    //-DIRECTORIO
     function folderCreate($directorio){
         if(file_exists($directorio)){
             return true;
@@ -62,7 +62,7 @@
 		//echo 'Se ha borrado el directorio '.$dir.'<br/>';
 		@rmdir($directorio);
 	}
-    //-CLAVE--------------------------------------------------------
+    //-CLAVE
     function cifrarPassword($password){
 		return $pass = hash('sha256', (get_magic_quotes_gpc() ? stripslashes($password) : $password));
     }
@@ -78,7 +78,7 @@
 
 		$hashed_pass = hash('sha256', (get_magic_quotes_gpc() ? stripslashes($password) : $password));
     }
-    //-FORMATO------------------------------------------------------
+    //-FORMATO
     function formatoFecha($fechaAsg){
         $actual= date('Y-m-d H:i:s');
     
@@ -89,7 +89,7 @@
         
         return $intervalo->format('%H horas %i minutos %s segundos');    
     }
-    //-UTIL--------------------------------------------------------
+    //-UTIL
     function UUID(){
         $uuid=substr(md5(time()), 0, 16);
         return $uuid;
@@ -106,34 +106,6 @@
 		$data = base64_decode($img);
 		$rutaImagenSalida = $ruta."/".$nombre.'.png';
 		return file_put_contents($rutaImagenSalida, $data);
-    }
-    //-BD----------------------------------------------------------
-    function tokenUser($correo){
-        global $mysqli;        
-        $query="SELECT id,nivel,usuario,nombre FROM `usuarios` WHERE correo='".$correo."'";
-        //debugL($query,"token-usuario");
-        $result = $mysqli->query($query);
-        $row = $result->fetch_assoc();
-        return  array ($row['id'],$row['nivel'],$row['usuario'],$row['nombre']);
-    }
-    
-    function getValor($campo,$tabla,$id){
-	    global $mysqli;
-	
-    	if($id != '' || $id >= '0'){
-    		$q = "SELECT $campo FROM $tabla WHERE id IN ($id) LIMIT 1";	
-    		$r = $mysqli->query($q);
-    		$val = $r->fetch_assoc();
-    		//evalua para evitar que un resultado null de error
-    		if($val){
-    		    $valor = $val[$campo];
-    	    }else{
-    		    $valor = '';
-    	    }
-    	}else{
-    		$valor = '';
-    	}	
-    	return $valor;
     }
 	//VALIDACIONES
     function validarURL($url){

@@ -1,112 +1,89 @@
 <?php
-    include_once("../config/config.php");
-    include_once("funciones.php");
+  include_once("../config/config.php");
+  include_once("funciones.php");
 	
-    list($METHOD,$PARAMS)=router($_SERVER['REQUEST_METHOD'],$_REQUEST['op']);
-    //debugL($PARAMS);
-    if ($METHOD == 'GET'){
-        switch($PARAMS){
+  list($METHOD,$PARAMS)=router($_SERVER['REQUEST_METHOD'],$_REQUEST['op']);
+  debugL($METHOD,"mt");
+  if ($METHOD == 'GET'){
+    switch($PARAMS){
 			case 'cuentas':
 				cuentasValidar();
-				break;
-			case 'cuentaId':
-				cuentaValidarId();
 				break;
 			case 'dependientes':
 				dependientesValidar();
 				break;
-			case 'dependienteId':
-				dependienteIdValidar();
-				break;
-            default:
-                echo "{failure-GET:true}";
-                break;
-        }
-    }elseif ($METHOD =='POST') {
-        switch($PARAMS){
-    	    case "cuentaAprobar" :
-    			cuentaAprobar();
-    			break;
+      default:
+        echo "{failure-GET:true}";
+        break;
+    }
+  }elseif ($METHOD =='POST') {
+    switch($PARAMS){
+    	case "cuentaAprobar" :
+    		cuentaAprobar();
+    		break;
 			case "cuentaRechazar" :
-    			cuentaRechazar();
-    			break;
+    		cuentaRechazar();
+    		break;
 			case "dependienteAprobar":
 				dependienteAprobar();
 				break;
 			case "dependienteRechazar":
 				dependienteRechazar();
 				break;
-    	    default:
-                echo "{failure-POST:true}";
-                break;
-        } 
-	}elseif ($METHOD =='PUT') {
-        switch($PARAMS){ 
-			case "cuentaAprobar" :
-    			cuentaAprobar();
-    			break;
-			case "cuentaRechazar" :
-    			cuentaRechazar();
-    			break;
-			case "dependienteAprobar":
-				dependientesAprobar();
-				break;
-			case "dependienteRechazar":
-				dependienteRechazar();
-				break;
-    	    default:
-                echo "{failure-PUT:true}";
-                break;
-        } 
-	}elseif ($METHOD =='DELETE') {
-        switch($PARAMS){ 
-			case "deleteValidacion" :
-    			 deleteValidacion();
-    			 break;
-    	    default:
-                echo "{failure-POST:true}";
-                break;
-        } 
-	} 
+    	default:
+        echo "{failure-POST:true}";
+        break;
+    } 
+	}
     
 	function formulario(){
-		//$data = json_decode(file_get_contents("php://input"), true);
-		//$JSON 		= file_get_contents("php://input");
-		//$_REQUEST 	= json_decode($JSON,true);
+    /*
+    $data = json_decode(file_get_contents("php://input"), true);
+		$JSON 		= file_get_contents("php://input");
+    */
 		
-        $data['id'] = (!empty($_REQUEST['id']) ? $_REQUEST['id'] : '');
-        $data['iddocumento'] = (!empty($_REQUEST['iddocumento']) ? $_REQUEST['iddocumento'] : '');
-        $data['idfamiliar'] = (!empty($_REQUEST['idfamiliar']) ? $_REQUEST['idfamiliar'] : '');
-        $data['idpaciente'] = (!empty($_REQUEST['idpaciente']) ? $_REQUEST['idpaciente'] : '');
-        $data['idusuario'] = (!empty($_REQUEST['idusuario']) ? $_REQUEST['idusuario'] : '');
-        $data['nombre'] = (!empty($_REQUEST['nombre']) ? $_REQUEST['nombre']:'');
-        $data['descripcion'] = (!empty($_REQUEST['descripcion']) ? $_REQUEST['descripcion']:'');
+    $data['id'] = (!empty($_REQUEST['id']) ? $_REQUEST['id'] : '');
+
+    $data['iddocumento'] = (!empty($_REQUEST['iddocumento']) ? $_REQUEST['iddocumento'] : '');
+
+    $data['idfamiliar'] = (!empty($_REQUEST['idfamiliar']) ? $_REQUEST['idfamiliar'] : '');
+
+    $data['idpaciente'] = (!empty($_REQUEST['idpaciente']) ? $_REQUEST['idpaciente'] : '');
+
+    $data['idusuario'] = (!empty($_REQUEST['idusuario']) ? $_REQUEST['idusuario'] : '');
+
+    $data['nombre'] = (!empty($_REQUEST['nombre']) ? $_REQUEST['nombre']:'');
+
+    $data['descripcion'] = (!empty($_REQUEST['descripcion']) ? $_REQUEST['descripcion']:'');
+
 		$data['estatus'] = (!empty($_REQUEST['estatus']) ? $_REQUEST['estatus']:'');
+
 		$data['estado']	= (!empty($_REQUEST['estado']) ? $_REQUEST['estado']:'');
+
 		$data['busqueda'] = (!empty($_REQUEST['busqueda']) ? $_REQUEST['busqueda'] : '');
 	    
-	    return $data;
-    }
+	  return $data;
+  }
 	
 	function params(){
-		
-        $data['id']	= (!empty($_GET['id']) ? $_GET['id'] : '');
-        $data['page'] = (!empty($_REQUEST['page']) ? $_REQUEST['page'] : 1);
+		$data['id']	= (!empty($_GET['id']) ? $_GET['id'] : '');
+
+    $data['page'] = (!empty($_REQUEST['page']) ? $_REQUEST['page'] : 1);
         
-	    return $data;
-    }
-    
-    //-FUNCIONAL-------------------------------------------------------
-    function nombreEstado($id){
-        global $mysqli;
+	  return $data;
+  }
+  //-FUNCIONAL
+  function nombreEstado($id){
+    global $mysqli;
         
-        $query = "SELECT `id`, `nombre` 
+    $query = "SELECT `id`, `nombre` 
             FROM `estados_documento_verificacion` 
             WHERE id ='".$id."'";
         
-        $result  = $mysqli->query($query);
+    $result  = $mysqli->query($query);
+
 		$records = $result->num_rows;
-        //debugL($query,"nombreEstados");
+    //debugL($query,"nombreEstados");
 		if($records == 0){
 			return "N/A";
 		}   
@@ -115,18 +92,19 @@
 			$row = $result->fetch_assoc();        
 			return $row["nombre"];
 		}
-    }
+  }
     
-    function nombrePaciente($id){
-        global $mysqli;
+  function nombrePaciente($id){
+    global $mysqli;
         
-        $query = "SELECT  CONCAT(nombre,' ',apellido) AS nombre 
-            FROM `pacientes` 
-            WHERE id ='".$id."'";
+    $query = "SELECT  CONCAT(nombre,' ',apellido) AS nombre 
+      FROM `pacientes` 
+      WHERE id ='".$id."'";
         
-        $result  = $mysqli->query($query);
+    $result  = $mysqli->query($query);
+
 		$records = $result->num_rows;
-        //debugL($query,"nombreEstados");
+
 		if($records == 0){
 			return "N/A";
 		}   
@@ -135,14 +113,13 @@
 			$row = $result->fetch_assoc();        
 			return $row["nombre"];
 		}
-    }
-    //-VALIDADCION-DEPENDIENTE-----------------------------------------
-    function dependientesValidar(){
-        global $mysqli;
-        $data = formulario();
+  }
+  //-VALIDADCION-DEPENDIENTE
+  function dependientesValidar(){
+    global $mysqli;
 		$resultado = array();
        
-        $query = " SELECT p.idusuario AS idusuario,p.id AS idpaciente,pd.id AS iddocumento,rf.id AS idfamiliar,rf.idpaciente AS idprincipal,CONCAT(p.nombre,' ',p.apellido) AS nombre,pr.nombre AS parentesco,td.nombre AS tipodocumento,pd.documento,pd.tipoverificacion,pd.idestadoverificacion AS estadodocumento,rf.idestadoverificacion AS estadofamiliar
+    $query = " SELECT p.idusuario AS idusuario,p.id AS idpaciente,pd.id AS iddocumento,rf.id AS idfamiliar,rf.idpaciente AS idprincipal,CONCAT(p.nombre,' ',p.apellido) AS nombre,pr.nombre AS parentesco,td.nombre AS tipodocumento,pd.documento,pd.tipoverificacion,pd.idestadoverificacion AS estadodocumento,rf.idestadoverificacion AS estadofamiliar
 			FROM  pacientes p 
 			INNER JOIN pacientes_documentos pd ON pd.idpaciente= p.id
 			INNER JOIN relaciones_familiares rf ON rf.idfamiliar = p.id
@@ -154,9 +131,10 @@
 			AND pd.estado='inactivo'
             AND rf.idestadoverificacion = 3";
 					
-        $result  = $mysqli->query($query);
+    $result  = $mysqli->query($query);
+
 		$records = $result->num_rows;
-        //debugL($query,"getValidaciones");
+    
 		if($records == 0){
 			echo json_encode($resultado);
 		}   
@@ -164,29 +142,29 @@
 		if($records > 0){
 			while($row = $result->fetch_assoc()){        
 				$resultado[] = array(
-				    'idusuario'     => $row['idusuario'],
-					'idpaciente'    => $row["idpaciente"],
-        			'iddocumento'   => $row["iddocumento"],
-        			'idfamiliar'    => $row["idfamiliar"],
-        			'principal'     => nombrePaciente($row["idprincipal"]),
-        			'nombre'        => ucwords($row["nombre"]),
-        			'parentesco'    => $row["parentesco"],
-        			'tipodocumento' => $row["tipodocumento"],
-        			'documento'     => $row["documento"],
-        			'tipoverificacion'  => ucfirst(str_replace('verificacion-','',$row["tipoverificacion"])),
-        			'estadodocumento'   => nombreEstado($row["estadodocumento"]),
-        			'estadofamiliar'    => nombreEstado($row["estadofamiliar"]));
+				  'idusuario'     => $row['idusuario'],
+				  'idpaciente'    => $row["idpaciente"],
+        	'iddocumento'   => $row["iddocumento"],
+        	'idfamiliar'    => $row["idfamiliar"],
+        	'principal'     => nombrePaciente($row["idprincipal"]),
+        	'nombre'        => ucwords($row["nombre"]),
+        	'parentesco'    => $row["parentesco"],
+        	'tipodocumento' => $row["tipodocumento"],
+        	'documento'     => $row["documento"],
+        	'tipoverificacion'  => ucfirst(str_replace('verificacion-','',$row["tipoverificacion"])),
+        	'estadodocumento'   => nombreEstado($row["estadodocumento"]),
+        	'estadofamiliar'    => nombreEstado($row["estadofamiliar"]));
 			}
 			echo json_encode($resultado);
 		}        
-    }
+  }
 	
 	function dependienteValidarId(){
-        global $mysqli;
-        $data = params();
+    global $mysqli;
+    $data = params();
 		$resultado = array();
        
-        $query  = " SELECT p.id AS idpaciente,pd.id AS iddocumento,CONCAT(p.nombre,' ',p.apellido) AS nombre,pr.nombre,td.nombre AS tipodocumento,pd.documento,pd.tipoverificacion,sdv.nombre estado
+    $query  = " SELECT p.id AS idpaciente,pd.id AS iddocumento,CONCAT(p.nombre,' ',p.apellido) AS nombre,pr.nombre,td.nombre AS tipodocumento,pd.documento,pd.tipoverificacion,sdv.nombre estado
 			FROM  pacientes p 
 			INNER JOIN pacientes_documentos pd ON pd.idpaciente= p.id
 			INNER JOIN relaciones_familiares rf ON rf.idfamiliar = p.id
@@ -199,35 +177,36 @@
 			AND pd.estado='inactivo'
             AND p.id ='".$data['id']."' ";
 					
-        $result  = $mysqli->query($query);
+    $result  = $mysqli->query($query);
+
 		$records = $result->num_rows;
-        //debugL($query,"getValidaciones");
+
 		if($records == 0){
 			echo json_encode($resultado);
 		}   
 		
 		if($records > 0){
 			while($row = $result->fetch_assoc()){        
-					$resultado[] = array(
-					'idpaciente'    => $row["idpaciente"],
-        			'iddocumento'   => $row["iddocumento"],
-        			'idfamiliar'    => $row["idfamiliar"],
-        			'principal'     => nombrePaciente($row["idprincipal"]),
-        			'nombre'        => ucwords($row["nombre"]),
-        			'parentesco'    => $row["parentesco"],
-        			'tipodocumento' => $row["tipodocumento"],
-        			'documento'     => $row["documento"],
-        			'tipoverificacion'  => ucfirst(str_replace('verificacion-','',$row["tipoverificacion"])),
-        			'estadodocumento'   => nombreEstado($row["estadodocumento"]),
-        			'estadofamiliar'    => nombreEstado($row["estadofamiliar"]));
+				$resultado[] = array(
+				'idpaciente'    => $row["idpaciente"],
+        'iddocumento'   => $row["iddocumento"],
+        'idfamiliar'    => $row["idfamiliar"],
+        'principal'     => nombrePaciente($row["idprincipal"]),
+        'nombre'        => ucwords($row["nombre"]),
+        'parentesco'    => $row["parentesco"],
+        'tipodocumento' => $row["tipodocumento"],
+        'documento'     => $row["documento"],
+        'tipoverificacion'  => ucfirst(str_replace('verificacion-','',$row["tipoverificacion"])),
+        'estadodocumento'   => nombreEstado($row["estadodocumento"]),
+        'estadofamiliar'    => nombreEstado($row["estadofamiliar"]));
 			}
 			echo json_encode($resultado);
 		}        
-    }
+  }
 	
 	function dependienteAprobar(){
-        global $mysqli;		
-        $data   = formulario();
+    global $mysqli;		
+     $data   = formulario();
 		/*
 		ESTADOS PACIENTE
 		1-activo
@@ -243,41 +222,37 @@
 		2-no aprobado
 		3-en espera de aprobacion
 		*/
-        $queryD = " UPDATE pacientes_documentos SET
+    $queryD = " UPDATE pacientes_documentos SET
 			idestadoverificacion = 1,
 			estado = 'activo'
 			WHERE id = '".$data['iddocumento']."'";
-        /*
+     /*
 		ESTADOS DOCUMENTO VERIFICACION
 		1-aprobado
 		2-no aprobado
 		3-en espera de aprobacion
 		*/
-        $queryF = " UPDATE relaciones_familiares SET 
+    $queryF = " UPDATE relaciones_familiares SET 
             idestadoverificacion = 1
             WHERE id ='".$data['idfamiliar']."'";
             
-        $resultP = $mysqli->query($queryP);
+    $resultP = $mysqli->query($queryP);
 		$resultD = $mysqli->query($queryD);
-        $resultF = $mysqli->query($queryF);
+    $resultF = $mysqli->query($queryF);
 				
-	    debugL($queryP,"dependiente");
-	    debugL($queryD,"dependiente");
-	    debugL($queryF,"dependiente");
-	    
-        if($resultP == true && $resultD == true && $resultF == true){
-            echo notificacion(1,"Dependiente aprobado","");
-            exit;    
-        }else{
-            echo notificacion(2,"Problema al actualizar la validación","");
-            exit;
-        }
+    if($resultP == true && $resultD == true && $resultF == true){
+      echo notificacion(1,"Dependiente aprobado","");
+      exit;    
+    }else{
+      echo notificacion(2,"Problema al actualizar la validación","");
+      exit;
     }
+  }
 	
 	function dependienteRechazar(){
-        global $mysqli;		
-        $data   = formulario();
-        /*
+    global $mysqli;		
+    $data   = formulario();
+    /*
 		ESTADOS PACIENTE
 		1-activo
 		2-inactivo
@@ -292,7 +267,7 @@
 		2-no aprobado
 		3-en espera de aprobacion
 		*/
-        $queryD = " UPDATE pacientes_documentos SET
+    $queryD = " UPDATE pacientes_documentos SET
 			idestadoverificacion = 2,
 			estado = 'inactivo'
 			WHERE id = '".$data['iddocumento']."'";
@@ -302,33 +277,28 @@
 		2-no aprobado
 		3-en espera de aprobacion
 		*/
-        $queryF = " UPDATE relaciones_familiares SET 
-            idestadoverificacion = 2
-            WHERE id ='".$data['idfamiliar']."'";
+    $queryF = " UPDATE relaciones_familiares SET 
+      idestadoverificacion = 2
+      WHERE id ='".$data['idfamiliar']."'";
             
-        $resultP = $mysqli->query($queryP);
+    $resultP = $mysqli->query($queryP);
 		$resultD = $mysqli->query($queryD);
-        $resultF = $mysqli->query($queryF);
-				
-	    debugL($queryP,"dependiente");
-	    debugL($queryD,"dependiente");
-	    debugL($queryF,"dependiente");
+    $resultF = $mysqli->query($queryF);
 	    
-        if($resultP == true && $resultD == true && $resultF == true){
-            echo notificacion(1,"Dependiente aprobado","");
-            exit;    
-        }else{
-            echo notificacion(2,"Problema al actualizar la validación","");
-            exit;
-        }
+    if($resultP == true && $resultD == true && $resultF == true){
+      echo notificacion(1,"Dependiente aprobado","");
+      exit;    
+    }else{
+      echo notificacion(2,"Problema al actualizar la validación","");
+      exit;
     }
-    //-VALIDADCION-CUENTA-----------------------------------------------
+  }
+  //-VALIDADCION-CUENTA
 	function cuentasValidar(){
-        global $mysqli;
-        $data = formulario();
+    global $mysqli;
 		$resultado = array();
        
-        $query  = " SELECT u.id AS idusuario,p.id AS idpaciente,pd.id AS iddocumento,CONCAT(p.nombre,'',p.apellido) AS nombre,td.nombre AS tipodocumento,pd.documento,pd.tipoverificacion,pd.imagen_documento,pd.imagen_verificacion,sdv.nombre estado
+    $query  = " SELECT u.id AS idusuario,p.id AS idpaciente,pd.id AS iddocumento,CONCAT(p.nombre,'',p.apellido) AS nombre,td.nombre AS tipodocumento,pd.documento,pd.tipoverificacion,pd.imagen_documento,pd.imagen_verificacion,sdv.nombre estado
 			FROM usuarios u
 			INNER JOIN pacientes p ON p.idusuario=u.id
 			INNER JOIN pacientes_documentos pd ON pd.idpaciente= p.id
@@ -340,9 +310,9 @@
 			AND pd.idestadoverificacion = 3
 			AND pd.estado='inactivo' ";
 					
-        $result  = $mysqli->query($query);
+    $result  = $mysqli->query($query);
 		$records = $result->num_rows;
-        //debugL($query,"getValidaciones");
+
 		if($records == 0){
 			echo json_encode($resultado);
 		}   
@@ -351,27 +321,24 @@
 			while($row = $result->fetch_assoc()){        
 				$resultado[] = array(
 					'idusuario'     => $row['idusuario'],
-        			'idpaciente'    => $row['idpaciente'],
-        			'iddocumento'   => $row['iddocumento'],
-        			'nombre'        => ucwords($row["nombre"]),
-        			'tipodocumento' => $row['tipodocumento'],
-        			'documento'     => $row['documento'],
-        			'tipoverificacion'  =>  ucfirst(str_replace('verificacion-','',$row["tipoverificacion"])),
-        			'imagen_documento'   => $row['imagen_documento'],
-        			'imagen_verificacion'=> $row['imagen_verificacion'],
-        			'estado'             => $row['estado']
+        	'idpaciente'    => $row['idpaciente'],
+        	'iddocumento'   => $row['iddocumento'],
+        	'nombre'        => ucwords($row["nombre"]),
+        	'tipodocumento' => $row['tipodocumento'],
+        	'documento'     => $row['documento'],
+          'tipoverificacion'  =>  ucfirst(str_replace('verificacion-','',$row["tipoverificacion"])),
+        	'imagen_documento'   => $row['imagen_documento'],
+        	'imagen_verificacion'=> $row['imagen_verificacion'],
+        	'estado'             => $row['estado']
 				);
 			}
-			
 			echo json_encode($resultado);
 		}        
-    }
-	
-	function cuentaValidarId(){}
-	
+  }
+
 	function cuentaAprobar(){
-        global $mysqli;		
-        $data   = formulario();
+    global $mysqli;		
+    $data   = formulario();
 		/*
 		ESTADOS USUARIO
 		1-activo
@@ -395,30 +362,28 @@
 		2-no aprobado
 		3-en espera de aprobacion
 		*/	
-        $queryD = " UPDATE pacientes_documentos SET
+    $queryD = " UPDATE pacientes_documentos SET
 			idestadoverificacion = 1,
 			estado ='activo'
 			WHERE id = '".$data['iddocumento']."'";
             
-        $resultU = $mysqli->query($queryU);
+    $resultU = $mysqli->query($queryU);
 		$resultP = $mysqli->query($queryP);
 		$resultD = $mysqli->query($queryD);
 		
-	    debugL($queryU."aprobada","validacion");
-	    debugL($queryP."aprobada","validacion");
-	    debugL($queryD."aprobada","validacion");
-        if($resultU == true && $resultP ==true && $resultD =true){
-            echo notificacion(1,"Validación aprobada","");
-            exit;    
-        }else{
-            echo notificacion(2,"Problema al actualizar la validación","");
-            exit;
-        }
+
+    if($resultU == true && $resultP ==true && $resultD =true){
+      echo notificacion(1,"Validación aprobada","");
+      exit;    
+    }else{
+      echo notificacion(2,"Problema al actualizar la validación","");
+      exit;
     }
+  }
 	
 	function cuentaRechazar(){
-        global $mysqli;		
-        $data   = formulario();
+    global $mysqli;		
+    $data   = formulario();
 		/*
 		ESTADOS USUARIO
 		1-activo
@@ -442,33 +407,29 @@
 		2-no aprobado
 		3-en espera de aprobacion
 		*/	
-        $queryD = " UPDATE pacientes_documentos SET
+    $queryD = " UPDATE pacientes_documentos SET
 			idestadoverificacion = 2,
 			estado ='inactivo'
 			WHERE id = '".$data['iddocumento']."'";
             
-        $resultU = $mysqli->query($queryU);
+    $resultU = $mysqli->query($queryU);
 		$resultP = $mysqli->query($queryP);
 		$resultD = $mysqli->query($queryD);
-		
-	    debugL($queryU."rechazada","validacion");
-	    debugL($queryP."rechazada","validacion");
-	    debugL($queryD."rechazada","validacion");
-	    if($resultU == true && $resultP ==true && $resultD =true){
-            echo notificacion(1,"Proceso completado de forma exitosa", $data['id']);
-            exit;    
-        }else{
-            echo notificacion(2,"Problema al actualizar la validación","");
-            exit;
-        }
+
+	  if($resultU == true && $resultP ==true && $resultD =true){
+      echo notificacion(1,"Proceso completado de forma exitosa", $data['id']);
+      exit;    
+    }else{
+      echo notificacion(2,"Problema al actualizar la validación","");
+      exit;
     }
-	//-OTROS------------------------------------------------------------
-    function getValidaciones(){
-        global $mysqli;
-        $data = formulario();
+  }
+	//-OTROS
+  function getValidaciones(){
+    global $mysqli;
 		$resultado = array();
        
-        $query  = " SELECT a.id, CONCAT(b.nombre,' ',b.apellido) AS nombre, c.nombre AS tipodocumento, a.documento, 
+    $query  = " SELECT a.id, CONCAT(b.nombre,' ',b.apellido) AS nombre, c.nombre AS tipodocumento, a.documento, 
 					d.nombre AS estadoverificacion, a.tipoverificacion, a.imagen_documento, a.imagen_verificacion, 
 					a.estado, b.idusuario, a.idpaciente
 					FROM `pacientes_documentos` a
@@ -477,9 +438,9 @@
 					LEFT JOIN estados_documento_verificacion d ON d.id = a.idestadoverificacion
 					WHERE a.estado = 'inactivo' OR a.estado = 'activo' ";
 					
-        $result  = $mysqli->query($query);
+    $result  = $mysqli->query($query);
 		$records = $result->num_rows;
-        //debugL($query,"getValidaciones");
+
 		if($records == 0){
 			echo json_encode($resultado);
 		}   
@@ -500,22 +461,21 @@
 					'idpaciente'  		=>  $row["idpaciente"],
 				);
 			}
-			
 			echo json_encode($resultado);
 		}        
-    }
+  }
 	
 	function getValidacionId(){
-        global $mysqli;
-        $params    = params();
+    global $mysqli;
+    $params    = params();
 		$resultado = array();
 		
-        $query  = " SELECT `id`, `nombre`, `descripcion`, `estatus` 
-					FROM `pacientes_documentos` WHERE id ='".$params['id']."'";
+    $query  = " SELECT `id`, `nombre`, `descripcion`, `estatus` 
+			FROM `pacientes_documentos` WHERE id ='".$params['id']."'";
         
-        $result  = $mysqli->query($query);
-        $records = $result->num_rows;
-        //debugL($query,"getValidacionId");
+    $result  = $mysqli->query($query);
+    $records = $result->num_rows;
+
 		if($records == 0){
 			echo json_encode($resultado);
 		}   
@@ -529,8 +489,7 @@
 					'estatus'     	=>  $row["estatus"]
 					);
 			}
-        
-			echo json_encode($resultado);
+      echo json_encode($resultado);
 		}
-    }
+  }
 ?>

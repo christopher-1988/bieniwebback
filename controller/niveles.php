@@ -174,7 +174,7 @@
             echo json_encode(array(
                     'id'        => "",
                     'rsp'       => 1,
-                    'msg'       => "Nivel actualizado de forma exitosa ".$senadis));
+                    'msg'       => "Nivel actualizado de forma exitosa "));
             exit;    
         }else{
             echo notificacion(2,"Problema al actualizar el nivel","");
