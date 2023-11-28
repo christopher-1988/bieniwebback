@@ -510,6 +510,46 @@
     }
   });
 
+  function infoPaciente($idPaciente){
+    global $mysqli;
+
+    try {
+
+          $query= " SELECT CONCAT(p.nombre,' ',p.apellido) AS nombre
+            FROM pacientes p
+            WHERE p.id = ?";
+
+          $stmt = $mysqli->prepare($query);
+
+          $stmt->bind_param("i", $$idPaciente);
+
+          if (!$stmt->execute()) {
+            throw new Exception("Error execute cnst: " . $stmt->error); 
+          }
+    
+          $result = $stmt->get_result();
+      
+          $records = $result->num_rows;
+
+          if ($records == 0) {
+            return [
+              'records'=>0,
+                'nombre' => '' 
+            ];
+            exit;
+          }
+
+          if($records > 0){
+              $row = $result->fetch_assoc();
+              return [
+                'records' =>$records,
+                'nombre' => $row['nombre']
+              ];
+          }
+    } catch (Exception $e) {
+      return "Problema al actualizar la validación";
+    }
+  }
 
   $router->post('principal/aprobar',function($params){
     global $mysqli;
@@ -549,11 +589,20 @@
         $resultD->bind_param("i",$data['iddocumento']);
 
         $resultD->execute();
-
+        //si todo sale bien aplicar commit
         $mysqli->commit();
+        //Consultar data paciente
+        $informacion= infoPaciente($data['idpaciente']);
 
+        if ($informacion['records'] > 0) {
+           
+            $nombre = $informacion['nombre'];
+            //Envio correo
+            //get_consentimiento($data['idusuario'], $data['idpaciente'], $nombre);
+        }
+        //Notificar
         echo notificacion(1, "Principal aprobado", "");
-
+        
     } catch (Exception $e) {
       $mysqli->rollback();
       echo notificacion(2, "Problema al actualizar la validación", $e->getMessage());
