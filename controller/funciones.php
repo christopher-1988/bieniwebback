@@ -1,12 +1,12 @@
 <?php
     include_once("../config/config.php");
-    //-REPONSE
-    function notificacion($rsp,$msg,$id,$item=array()){
-        return json_encode(array(
-                'rsp'   => $rsp,
-                'id'    => $id,
-                'msg'   => $msg,
-                'item'  => $item));
+
+    function notificacion($rsp,$msg,$id,$data=array()){
+      return json_encode(array(
+        'responseCode'   => $rsp,
+        'msg'   => $msg,
+        'id'    => $id,
+        'item'  => $data));
     }
 	
     function response($data,$recordsResults,$recordsFiltered,$current_page){
@@ -14,12 +14,15 @@
                 'data'              => $data,
                 'recordsTotals'    => $recordsResults,
                 'recordsFiltered'   => $recordsFiltered,
-                'current_page'      => $current_page));
+                'currentPage'      => $current_page));
     }
-    
-    function router($METHOD,$REQUEST){
-        $PARAM  = isset($REQUEST)?$REQUEST:"";
-        return array($METHOD,$PARAM);
+
+    function handleException($e) {
+      http_response_code(500);
+
+      $errorMessage = $e->getMessage();
+
+      echo "Estamos presantando problemas ->".$errorMessage;
     }
     //-DIRECTORIO
     function folderCreate($directorio){
@@ -50,44 +53,22 @@
     }
     
     function deleteDirectory($directorio) {
-		if(!$dh = @opendir($directorio)) return;
+		  if(!$dh = @opendir($directorio)) return;
 		    while (false !== ($current = readdir($dh))){
-			if($current != '.' && $current != '..') {
-				//echo 'Se ha borrado el archivo '.$dir.'/'.$current.'<br/>';
-				if (!@unlink($directorio.'/'.$current)) 
-					deleteDirectory($directorio.'/'.$current);
-			}
-		}
-		closedir($dh);
-		//echo 'Se ha borrado el directorio '.$dir.'<br/>';
-		@rmdir($directorio);
-	}
+			  if($current != '.' && $current != '..') {
+				  //echo 'Se ha borrado el archivo '.$dir.'/'.$current.'<br/>';
+				  if (!@unlink($directorio.'/'.$current)) 
+					  deleteDirectory($directorio.'/'.$current);
+			  }
+		  }
+		  closedir($dh);
+		  //echo 'Se ha borrado el directorio '.$dir.'<br/>';
+		  @rmdir($directorio);
+	  }
     //-CLAVE
-    function cifrarPassword($password){
-		return $pass = hash('sha256', (get_magic_quotes_gpc() ? stripslashes($password) : $password));
-    }
-    
-    function generarPassword(){
-        $longitud = 6;
-        $password = "";
-	    $str = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz1234567890.,$#*&()";
-	    
-	    for($i=0;$i<$longitud;$i++) {
-	      $password .= substr($str,rand(0,70),1);
-	    }
-
-		$hashed_pass = hash('sha256', (get_magic_quotes_gpc() ? stripslashes($password) : $password));
-    }
-    //-FORMATO
-    function formatoFecha($fechaAsg){
-        $actual= date('Y-m-d H:i:s');
-    
-        $fecha1 = new DateTime($actual);//fecha inicial
-        $fecha2 = new DateTime($fechaAsg);//fecha de cierre
-        
-        $intervalo = $fecha1->diff($fecha2);
-        
-        return $intervalo->format('%H horas %i minutos %s segundos');    
+    function cifrarPassword($data){
+      $hashed_pass = hash('sha256', stripslashes($data));
+      return $hashed_pass;
     }
     //-UTIL
     function UUID(){
@@ -96,30 +77,29 @@
     }
     
     function convertirBase64ToImage ($base64, $ruta, $nombre){
-		/*
-		$rutaImagenSalida = $ruta."/".$nombre.'.png';
-        $imagenBinaria = base64_decode($base64);
-        return file_put_contents($rutaImagenSalida, $imagenBinaria);
-		*/
-		$img = str_replace('data:image/png;base64,', '', $base64);
-		$img = str_replace(' ', '+', $img);
-		$data = base64_decode($img);
-		$rutaImagenSalida = $ruta."/".$nombre.'.png';
-		return file_put_contents($rutaImagenSalida, $data);
+      /*
+      $rutaImagenSalida = $ruta."/".$nombre.'.png';
+          $imagenBinaria = base64_decode($base64);
+          return file_put_contents($rutaImagenSalida, $imagenBinaria);
+      */
+		  $img = str_replace('data:image/png;base64,', '', $base64);
+		  $img = str_replace(' ', '+', $img);
+		  $data = base64_decode($img);
+		  $rutaImagenSalida = $ruta."/".$nombre.'.png';
+		  return file_put_contents($rutaImagenSalida, $data);
     }
-	//VALIDACIONES
+	    //VALIDACIONES
     function validarURL($url){
-		$options = array(
-		  'options' => array(
-			'default' => false, // Valor devuelto si la URL no es válida
-			'regexp' => '/^https:\/\//' // Expresión regular para validar el esquema
-		  )
-		);
+		  $options = array(
+		    'options' => array(
+			    'default' => false,
+			    'regexp' => '/^https:\/\//')
+		  );
 
-		if (filter_var($url, FILTER_VALIDATE_URL, $options)) {
-		  return true;
-		} else {
-		  return false;
-		}
-	}
+      if (filter_var($url, FILTER_VALIDATE_URL, $options)) {
+        return true;
+      } else {
+        return false;
+      }
+	  }
 ?>
