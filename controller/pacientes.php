@@ -30,7 +30,7 @@
         
     return $data;
   }
-  //-FUNCIONAL
+  //-Funcional
   function estados($idestado,$idestadoverificacion,$estado){
     /*
 		ESTADOS PACIENTE | ESTADOS DOCUMENTO VERIFICACION
@@ -54,121 +54,70 @@
       return array(3,$estado);
     }
   }
-    
-  function tipoVerificacion($tipoVerificacion,$imagenDocumento,$imagenVerificacion){
-    /*
-		ESTADOS VEREFICACION
-		-verificacion-automatica  
-		-verificacion-manual
-		*/
-        
-    if($tipoVerificacion == "") {
-      $estado = "Error guardado verificación";
-    }
-    
-    if ($tipoVerificacion == "verificacion-automatica") {
-      
-      if ($imagenDocumento == "" || $imagenVerificacion == "") {
-        $error="";
-
-        if($imagenDocumento == ""){
-          $error="documento";
-        }
-        
-        if($imagenVerificacion == ""){
-          $error="verificacion";
-        }
-
-        if($imagenDocumento == "" && $imagenVerificacion == ""){
-          $error="ambos";
-        }
-        
-        $estado = "Error en guardado de imagen ".$error;
-        
-      } else {
-        $estado = ucfirst(str_replace('verificacion-','',$tipoVerificacion));
-      }
-    }
-    
-    if ($tipoVerificacion == "verificacion-manual") {
-      if ($imagenDocumento == "" || $imagenVerificacion == "") {
-            
-        if($imagenDocumento == ""){
-          $error="documento";
-        }
-        
-        if($imagenVerificacion == ""){
-          $error="verificacion";
-        }
-
-        if($imagenDocumento == "" && $imagenVerificacion == ""){
-          $error="ambos";
-        }
-        
-        $estado = "Error en guardado de imagen ".$error;
-        
-      }else {
-          $estado = ucfirst(str_replace('verificacion-','',$tipoVerificacion));
-      }
-    }
-    return $estado;
-  }
   
   $router->get('pacientes',function($params){
     global $mysqli;
+    $response = array();
+    try{
+      
+      $query  = " SELECT p.idusuario AS idusuario,p.id AS idpaciente,CONCAT(p.nombre,' ',p.apellido) AS nombre,p.edad,IF(p.idparentesco = 0,'Principal',pr.nombre) AS perfil, p.fechanacimiento,tp.nombre AS tipo_documento,pd.documento,u.telefono,p.idestado,pd.idestadoverificacion,pd.tipoverificacion,pd.estado,
+              DATE_FORMAT(u.fecha, '%d/%m/%Y')  AS registrado
+              FROM pacientes p
+              INNER JOIN usuarios u ON u.id=p.idusuario
+              LEFT JOIN pacientes_documentos pd ON pd.idpaciente=p.id
+              LEFT JOIN tipos_documento tp ON tp.id=pd.idtipodocumento
+              LEFT JOIN parentescos pr ON pr.id=p.idparentesco
+              WHERE 1 = 1 ";
+               
+      if (isset($params['search']) && $params['search'] != "") {
+            
+        $search = $params['search'];
+        
+        $query .= " AND  CONCAT(p.nombre, ' ', p.apellido) LIKE '%$search%'
+        OR  u.correo LIKE '%$search%'";
+      }       
+      
+      if(!$result = $mysqli->query($query)){
+        throw new Exception("Error en la consulta: " . $mysqli->error);
+      }
+        
+      $recordsTotals = $result->num_rows;
+      
+      $inicio  = $params['page'] * 10 - 10;   
+      
+      $query  .= " ORDER BY p.id DESC LIMIT $inicio, 10 ";
 
-		$response = array();
-       
-    $query  = " SELECT p.idusuario AS idusuario,p.id AS idpaciente,CONCAT(p.nombre,' ',p.apellido) AS nombre,p.edad,IF(p.idparentesco = 0,'Principal',pr.nombre) AS perfil, p.fechanacimiento,tp.nombre AS tipodocumento,pd.documento,u.telefono,
-            p.idestado,pd.idestadoverificacion,pd.tipoverificacion,pd.imagen_documento,pd.imagen_verificacion,pd.estado
-            FROM pacientes p
-            INNER JOIN usuarios u ON u.id=p.idusuario
-            LEFT JOIN pacientes_documentos pd ON pd.idpaciente=p.id
-            LEFT JOIN tipos_documento tp ON tp.id=pd.idtipodocumento
-            LEFT JOIN parentescos pr ON pr.id=p.idparentesco
-            WHERE 1 = 1 ";
-		
-		if(!$result = $mysqli->query($query)){
-    		die($mysqli->error);  
-    	}
-    	
-    $recordsTotals = $result->num_rows;
-		
-    $inicio  = $params['page'] * 10 - 10;   
-    
-    $query  .= " ORDER BY p.id DESC LIMIT $inicio, 10 ";
-    $result  = $mysqli->query($query);
-    
-    $recordsFiltered = $result->num_rows;
-    
-    if($recordsTotals == 0){
-			echo response($response,0,0,0);
-		}   
-		
-		if($recordsTotals > 0){
-			while($row = $result->fetch_assoc()){ 
-			    
-			  list($idestado,$estado) = estados($row['idestado'],$row['idestadoverificacion'],$row['estado']);
-			    
-			  $tipoVerificacion = tipoVerificacion($row["tipoverificacion"],$row["imagen_documento"],$row["imagen_verificacion"]);
-			    
-		    $response[] = array(
-          'idusuario'     => $row['idusuario'],
-          'idpaciente'   => $row['idpaciente'],
-          'nombre'       => ucwords($row['nombre']),
-          'edad'            => $row['edad'],
-          'perfil'            => $row['perfil'], 
-          'fechanacimiento'=> $row['fechanacimiento'],
-          'tipodocumento'  => $row['tipodocumento'],
-          'documento'         => $row['documento'],
-          'telefono'              => $row['telefono'],
-          'tipoverificacion'  => $tipoVerificacion,
-          'idestado'             => $idestado,
-          'estadoRegistro'   => $tipoVerificacion,
-          'estado'                => $estado);
-			}
-			echo response($response,$recordsTotals,$recordsFiltered,0);
-		} 
+      if(!$result = $mysqli->query($query)){
+        throw new Exception("Error en la consulta: " . $mysqli->error);
+      }
+      
+      $recordsFiltered = $result->num_rows;
+      
+      if($recordsTotals == 0){
+        echo response($response,0,0,0);
+      }   
+      
+      if($recordsTotals > 0){
+        while($row = $result->fetch_assoc()){ 
+
+          $response[] = array(
+            'idusuario'     => $row['idusuario'],
+            'idpaciente'   => $row['idpaciente'],
+            'document'         => $row['documento'],
+            'documentType'  => $row['tipo_documento'],
+            'name'  => ucwords($row['nombre']),
+            'age'     => $row['edad'],
+            'profileType' => $row['perfil'], 
+            'birthdate' => $row['fechanacimiento'],
+            'phone'      => $row['telefono'],
+            'verification'  => $row['tipoverificacion'],
+            'registrationDate' => $row['registrado']);
+        }
+        echo response($response,$recordsTotals,$recordsFiltered,0);
+      }
+    }catch(Exception $e) {
+      handleException($e);
+    }
   });
 	
 	$router->get('paciente',function($params){
@@ -188,7 +137,7 @@
     }
     	
     $recordsTotals = $result->num_rows;
-    //debugL($query,"pacientes");
+
 		if($recordsTotals == 0){
 			echo response($response,0,0,0);
 		}   
@@ -225,7 +174,7 @@
     $result  = $mysqli->query($query);
 
 		$records = $result->num_rows;
-    //debugL($query,"nombreEstados");
+
 		if($records == 0){
 			return "N/A";
 		}   
@@ -443,70 +392,94 @@
       echo notificacion(2, "Problema al actualizar la validación", $e->getMessage());
     }
   });
-
-  $router->get('principales',function($params){
+  //Manual-principal
+  $router->get('manual',function($params){
     global $mysqli;
 		$response = array();
     
     try{
           
-        $query  = " SELECT u.id AS idusuario,p.id AS idpaciente,pd.id AS iddocumento,CONCAT(p.nombre,'',p.apellido) AS nombre,td.nombre AS tipodocumento,pd.documento,pd.tipoverificacion,pd.imagen_documento,pd.imagen_verificacion,sdv.nombre estado
+        $query  = " SELECT u.id AS idusuario,p.id AS idpaciente,pd.id AS iddocumento,CONCAT(p.nombre,'',p.apellido) AS nombre,td.nombre AS tipodocumento,pd.documento,pd.tipoverificacion,pd.imagen_documento,pd.imagen_verificacion,sdv.nombre estado,p.edad,
+        DATE_FORMAT(u.fecha, '%d/%m/%Y')  AS registrado,
+        p.fechanacimiento
           FROM usuarios u
           INNER JOIN pacientes p ON p.idusuario=u.id
           INNER JOIN pacientes_documentos pd ON pd.idpaciente= p.id
           INNER JOIN tipos_documento td ON td.id=pd.idtipodocumento
           INNER JOIN estados_documento_verificacion sdv ON sdv.id=pd.idestadoverificacion
-          WHERE u.estado='inactivo' 
+          WHERE u.estado = 'inactivo' 
           AND p.idparentesco = 0 
-          AND p.idestado=3 
+          AND p.idestado = 3 
           AND pd.idestadoverificacion = 3
-          AND pd.estado='inactivo' ";
-					
-      $stmt = $mysqli->prepare($query);
-
-      //$stmt->bind_param("s", $params['id']);
-
-      if (!$stmt->execute()) {
-        throw new Exception("Error execute cnst: " . $stmt->error); 
-      }
-    
-      $result = $stmt->get_result();
-      
-      $records = $result->num_rows;
-
-      if ($records == 0) {
-        echo response($response, 0, 0, 0);
-        exit;
-      }
-
-		  if($records > 0){
-        while($row = $result->fetch_assoc()){        
-				  $documento = $row['imagen_documento']===""
-          ?""
-          :"";
-
-          $verificacion = $row['imagen_verificacion']===""
-          ?""
-          :"";
+          AND pd.estado = 'inactivo' ";
+				
+        if (isset($params['search']) && $params['search'] != "") {
+            
+          $search = $params['search'];
         
-        "asset/perfiles/".$row['idusuario']."/reconocimientos/".$row['idpaciente'];
+          $query .= " AND  CONCAT(p.nombre, ' ', p.apellido) LIKE '%$search%'
+          OR  u.correo LIKE '%$search%'
+          OR pd.documento LIKE '%$search%'";
+        } 
+
+        if(!$result = $mysqli->query($query)){
+          throw new Exception("Error en la consulta: " . $mysqli->error);
+        }
+            
+        $recordsTotals = $result->num_rows;
           
-          $resultado[] = array(
-					'idusuario'     => $row['idusuario'],
-        	'idpaciente'    => $row['idpaciente'],
-        	'iddocumento'   => $row['iddocumento'],
-        	'nombre'        => ucwords($row["nombre"]),
-        	'tipodocumento' => $row['tipodocumento'],
-        	'documento'     => $row['documento'],
-          'tipoverificacion'  =>  ucfirst(str_replace('verificacion-','',$row["tipoverificacion"])),
-        	'imagen_documento'=> $documento,
-        	'imagen_verificacion'=> $verificacion,
-        	'estado' => $row['estado']);
-			  }
-			  echo json_encode($resultado);
-		  } 
+        $inicio  = $params['page'] * 10 - 10;   
+          
+        $query  .= " ORDER BY p.id DESC LIMIT $inicio, 10 ";
+
+        if(!$result = $mysqli->query($query)){
+          throw new Exception("Error en la consulta: " . $mysqli->error);
+        }
+          
+        $recordsFiltered = $result->num_rows;
+
+        if ($recordsTotals  == 0) {
+          echo response($response, 0, 0, 0);
+          exit;
+        }
+
+		    if($recordsTotals  > 0){
+          while($row = $result->fetch_assoc()){        
+			
+          $archivo = "asset/perfiles/".$row['idusuario']."/reconocimientos/".$row['idpaciente'];
+
+          if ($row['imagen_documento']!=="" && file_exists($archivo."/".$row['imagen_documento'])) {
+              $documento = $archivo."/".$row['imagen_documento'];
+          } else {
+              $documento = "";
+          }
+
+          if ($row['imagen_verificacion']!=="" && file_exists($archivo."/".$row['imagen_verificacion'])) {
+              $verificacion = $archivo."/".$row['imagen_verificacion'];
+          } else {
+              $verificacion = "";
+          }
+
+          $response[] = array(
+					  'idusuario'     => $row['idusuario'],
+        	  'idpaciente'    => $row['idpaciente'],
+        	  'iddocumento'   => $row['iddocumento'],
+        	  'name'        => ucwords($row["nombre"]),
+        	  'document'     => $row['documento'],
+            'documentType' => $row['tipodocumento'],
+            'age'=>$row['edad'],
+            'verification'  =>  ucfirst(str_replace('verificacion-','',$row["tipoverificacion"])),
+            'imageDocument'=>$documento,
+            'imageVerefication'=>$verificacion,
+        	  'state' => $row['estado'],
+            'registrationDate' =>$row['registrado'],
+            'birthdate' => $row['fechanacimiento'],);
+			    }
+			  
+          echo response($response,$recordsTotals,$recordsFiltered,0);
+		    } 
     }catch(Exception $e) {
-      die($e);
+      handleException($e);
     }
   });
 
@@ -551,7 +524,7 @@
     }
   }
 
-  $router->post('principal/aprobar',function($params){
+  $router->post('manual/aprobar',function($params){
     global $mysqli;
     $data = formulario();
 
@@ -563,42 +536,47 @@
 			    estado = 'activo'
 			    WHERE id =?";
 
-        $resultU = $mysqli->prepare($queryU);
+        $stmtU = $mysqli->prepare($queryU);
 
-        $resultU->bind_param("i",$data['idusuario']);
+        $stmtU->bind_param("i",$data['idusuario']);
 
-        $resultU->execute();
+        if (!$stmtU->execute()) {
+          throw new Exception("Error execute: " . $stmtU->error);
+        }
         //Paciente
         $queryP = " UPDATE pacientes SET 
 			    idestado = 1 
 			    WHERE  id =?";
 
-        $resultD = $mysqli->prepare($queryP);
+        $stmtP = $mysqli->prepare($queryP);
 
-        $resultD->bind_param("i", $data['idpaciente']);
+        $stmtP->bind_param("i", $data['idpaciente']);
 
-        $resultD->execute();
+        if (!$stmtP->execute()) {
+          throw new Exception("Error execute: " . $stmtP->error);
+        }
         //Documento
         $queryD = " UPDATE pacientes_documentos SET
 			    idestadoverificacion = 1,
 			    estado ='activo'
 			    WHERE id = ?";
         
-        $resultD = $mysqli->prepare($queryD);
+        $stmtD = $mysqli->prepare($queryD);
         
-        $resultD->bind_param("i",$data['iddocumento']);
+        $stmtD->bind_param("i",$data['iddocumento']);
 
-        $resultD->execute();
+        if (!$stmtD->execute()) {
+          throw new Exception("Error execute: " . $stmtD->error);
+        }
         //si todo sale bien aplicar commit
         $mysqli->commit();
         //Consultar data paciente
         $informacion= infoPaciente($data['idpaciente']);
 
         if ($informacion['records'] > 0) {
-           
-            $nombre = $informacion['nombre'];
-            //Envio correo
-            //get_consentimiento($data['idusuario'], $data['idpaciente'], $nombre);
+          $nombre = $informacion['nombre'];
+          //Envio correo
+          //get_consentimiento($data['idusuario'], $data['idpaciente'], $nombre);
         }
         //Notificar
         echo notificacion(1, "Principal aprobado", "");
@@ -609,7 +587,7 @@
     }
   });
 
-  $router->post('principal/rechazar',function($params){
+  $router->post('manual/rechazar',function($params){
      global $mysqli;
     $data = formulario();
 

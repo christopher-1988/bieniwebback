@@ -28,17 +28,32 @@
       return $data;
     }
     
-    $router->get('usuarios',function(){
+    $router->get('usuarios',function($params){
       global $mysqli;
       $response = array();
+
       try{
         
           $query  = " SELECT u.id AS idusuario,p.id AS idpersonal,CONCAT(p.nombre,' ',p.apellido) AS nombre,u.correo,p.imagen,u.estado
-            FROM usuarios u 
-            INNER JOIN personal p ON p.idusuario=u.id
-            WHERE u.estado = 'activo'";
-                    
-          $result  = $mysqli->query($query);
+          FROM usuarios u 
+          INNER JOIN personal p ON p.idusuario=u.id
+          WHERE 1 = 1 ";
+          
+          if (isset($params['search']) && $params['search'] != "") {
+            
+            $search = $params['search'];
+            
+            $query .= " AND  p.nombre LIKE '%$search%'
+              OR  u.correo LIKE '%$search%'";
+          }
+
+          if (isset($params['state']) && $params['state'] != "") {
+            $query .= " AND u.estado = '".$params['state']."'";
+          }
+
+          if(!$result = $mysqli->query($query)){
+            throw new Exception("Error en la consulta: " . $mysqli->error);
+          }
 
 		      $recordsResults = $result->num_rows;
 
@@ -55,11 +70,11 @@
               'correo'       => $row["correo"],
 					    'imagen'   	 => $row["imagen"],
 					    'estado'   		=> $row["estado"]);
-        }
+          }
         
-        echo response($response,$recordsResults,0,0);
+          echo response($response,$recordsResults,0,0);
       }catch(Exception $e) {
-        die($e);
+        handleException($e);
       }
     });
 

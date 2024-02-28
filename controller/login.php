@@ -16,35 +16,39 @@
   $router->post('doLoginWithGoogle',function(){
     global $mysqli;
     $data = formulario();
-    
-	  $sentencia = $mysqli->prepare(" SELECT u.id AS idusuario,CONCAT(u.nombre,' ',u.apellido) AS nombre,u.imagen,u.nivel
-            FROM usuariosback u
-            WHERE u.correo = ?");
-            
-    $sentencia->bind_param("s",$data['correo']);
+    try {
 
-    $sentencia->execute();
-    	
-    $resultado = $sentencia->get_result();
-    	
-    $recodTotals = $resultado->num_rows;
-    	
-    if($recodTotals == 0){ 
-    	echo notificacion(2,"No existe un usuario asociado a este correo","");
-    }
-    	
-    if($recodTotals > 0){
+      $sentencia = $mysqli->prepare(" SELECT u.id AS idusuario,CONCAT(u.nombre,' ',u.apellido) AS nombre,u.imagen,u.nivel
+      FROM usuariosback u
+      WHERE u.correo = ?");
+              
+      $sentencia->bind_param("s",$data['correo']);
 
-    	if ($row = $resultado->fetch_assoc()) {
-    	    
-    	  $item = array(
-				  'id'        => $row['idusuario'],
-        	'nombre'    => $row['nombre'],
-        	'imagen'    => $row['imagen'],
-        	'r'         => $row['nivel']);
-				
-    	  echo notificacion(1,"Bienvenido.!","",$item);
+      $sentencia->execute();
+        
+      $resultado = $sentencia->get_result();
+        
+      $recodTotals = $resultado->num_rows;
+        
+      if($recodTotals == 0){ 
+        echo notificacion(2,"No existe un usuario asociado a este correo","");
       }
+        
+      if($recodTotals > 0){
+
+        if ($row = $resultado->fetch_assoc()) {
+            
+          $item = array(
+            'id'        => $row['idusuario'],
+            'nombre'    => $row['nombre'],
+            'imagen'    => $row['imagen'],
+            'r'         => $row['nivel']);
+          
+          echo notificacion(1,"Bienvenido.!","",$item);
+        }
+      }
+    }catch(Exception $e) {
+      return "Error";
     }
   });
 
@@ -52,34 +56,41 @@
     global $mysqli;
     $data   = formulario();
     $clave  = cifrarPassword($data['clave']);
+
+    try {
         
-    $sentencia = $mysqli->prepare("SELECT u.id AS idusuario,CONCAT(u.nombre,' ',u.apellido) AS nombre,u.imagen,u.nivel
-            FROM usuariosback u
-            WHERE u.correo = ? AND u.clave = ? ");
-        
-    $sentencia->bind_param("ss",$data['correo'],$clave);
+      $sentencia = $mysqli->prepare("SELECT u.id AS idusuario,CONCAT(u.nombre,' ',u.apellido) AS nombre,u.imagen,u.nivel
+      FROM usuariosback u
+      WHERE u.correo = ? AND u.clave = ? ");
+
+      $sentencia->bind_param("ss",$data['correo'],$clave);
 		
-    $sentencia->execute();
+      $sentencia->execute();
     	
-    $resultado = $sentencia->get_result();
+      $resultado = $sentencia->get_result();
     
-    $recodTotals = $resultado->num_rows;
+      $recodTotals = $resultado->num_rows;
     	
-    if($recodTotals == 0){ 
-    	echo notificacion(2,"Usuario o clave incorrecta","");
-    }
+      if($recodTotals == 0){ 
+    	  echo notificacion(2,"Usuario o clave incorrecta","");
+      }
     	
-    if($recodTotals > 0){
-    	if ($row = $resultado->fetch_assoc()) {
-    	  $item = array(
+      if($recodTotals > 0){
+    	  if ($row = $resultado->fetch_assoc()) {
+    	    $item = array(
 				    'id'        => $row['idusuario'],
-        	  'nombre'    => $row['nombre'],
-        	  'imagen'    => $row['imagen'],
-        	  'r'         => $row['nivel']);
-				
+        	  'name'    => $row['nombre'],
+            'email'    => $row['imagen'],
+        	  'imagen' => $row['imagen'],
+        	  'token'    => '',
+            'active'=>true);
+        
     	    echo notificacion(1,"Bienvenido.!","",$item);
     	  }
     	}
+    }catch(Exception $e) {
+      return "Error";
+    }
 	});
 
   $router->run()
